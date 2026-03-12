@@ -528,36 +528,33 @@ class OBJECT_OT_update_alpha_threshold(bpy.types.Operator):
                 return node
         return None
 
+classes = [
+    OBJECT_OT_update_alpha_threshold,
+    OBJECT_OT_group_alpha_connect,
+    OBJECT_OT_group_texstraight,
+    OBJECT_OT_group_alpha_premultiply,
+    OBJECT_OT_group_alpha_clip,
+    OBJECT_OT_group_alpha_clip_remove,
+    OBJECT_OT_group_alpha_dithered,
+    OBJECT_OT_group_alpha_blended,
+    OBJECT_OT_group_texinterp,
+    OBJECT_OT_group_material_preview_flat,
+    OBJECT_OT_group_material_preview_sphere,
+    OBJECT_OT_group_material_preview_cube,
+    OBJECT_OT_group_material_preview_hair,
+    OBJECT_OT_group_material_preview_shaderball,
+    OBJECT_OT_group_material_preview_cloth,
+    OBJECT_OT_group_material_preview_fluid,
+    PANEL_PT_opacity_panel
+]
+
 def register():
     add_alpha_threshold_property()
-    bpy.utils.register_class(OBJECT_OT_update_alpha_threshold)
-    bpy.utils.register_class(OBJECT_OT_group_alpha_connect)
-    bpy.utils.register_class(PANEL_PT_opacity_panel)    # Add property here
-    classes = [
-        OBJECT_OT_group_alpha_connect,
-        OBJECT_OT_group_texstraight,
-        OBJECT_OT_group_alpha_premultiply,
-        OBJECT_OT_group_alpha_clip,
-        OBJECT_OT_group_alpha_clip_remove,
-        OBJECT_OT_group_alpha_dithered,
-        OBJECT_OT_group_alpha_blended,
-        OBJECT_OT_group_texinterp,
-        OBJECT_OT_group_material_preview_flat,
-        OBJECT_OT_group_material_preview_sphere,
-        OBJECT_OT_group_material_preview_cube,
-        OBJECT_OT_group_material_preview_hair,
-        OBJECT_OT_group_material_preview_shaderball,
-        OBJECT_OT_group_material_preview_cloth,
-        OBJECT_OT_group_material_preview_fluid,
-        PANEL_PT_opacity_panel
-    ]
     for cls in classes:
         bpy.utils.register_class(cls)
 
 def unregister():
-    bpy.utils.unregister_class(OBJECT_OT_update_alpha_threshold)
-    bpy.utils.unregister_class(OBJECT_OT_group_alpha_connect)
-    bpy.utils.unregister_class(PANEL_PT_opacity_panel)
-    del bpy.types.Scene.alpha_threshold_value
-if __name__ == "__main__":
-    register()
+    for cls in reversed(classes):
+        bpy.utils.unregister_class(cls)
+    if hasattr(bpy.types.Scene, "alpha_threshold_value"):
+        del bpy.types.Scene.alpha_threshold_value
