@@ -21,7 +21,7 @@
 
 bl_info = {"name": "NFS Texture Helper",
            "author": "CDMJ + XXJOHNATHANXX",
-           "version": (1, 0, 0),
+           "version": (1, 0, 1),
            "blender": (4, 5, 7),
            "location": "Toolbar > NFS Helper",
            "description": "helper panel for texture alpha assignment and shadows",
