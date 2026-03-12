@@ -1,0 +1,21 @@
+schema_version = "1.0.0"
+
+id = "NFS_HELPER"
+version = "1.0.0"
+name = "NFS HELPER"
+tagline = "NFS HELPER"
+maintainer = "XXJOHNATHANXX"
+
+type = "add-on"
+
+blender_version_min = "4.2.0"
+
+license = ["SPDX:GPL-2.0-or-later"]
+
+tags = ["Utilities"]
+
+website = "https://github.com/Drift-King/nfs-helper"
+
+[links]
+repository = "https://github.com/Drift-King/nfs-helper"
+issues = "https://github.com/Drift-King/nfs-helper/issues"
