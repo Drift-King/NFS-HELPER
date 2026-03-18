@@ -1,17 +1,4 @@
 {
-  "data": {
-    "version": "1.0.1",
-    "extensions": [
-      {
-        "id": "nfs_helper",
-        "name": "NFS Helper",
-        "version": "1.0.1",
-        "tagline": "Tools for NFS workflows",
-        "maintainer": "Drift-King",
-        "website": "https://github.com/Drift-King/NFS-HELPER",
-        "download_url": "https://github.com/Drift-King/NFS-HELPER/releases/download/v1.0.1/NFS-HELPER-1.0.1.zip",
-        "type": "add-on"
-      }
-    ]
-  }
+  "version": "1.0.1",
+  "extensions_url": "https://drift-king.github.io/NFS-HELPER/extensions.json"
 }
