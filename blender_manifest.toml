@@ -1,7 +1,7 @@
 schema_version = "1.0.0"
 
 id = "NFS_HELPER"
-version = "1.0.0"
+version = "1.0.1"
 name = "NFS HELPER"
 tagline = "NFS HELPER"
 maintainer = "XXJOHNATHANXX"
