@@ -20,8 +20,8 @@ jobs:
 
       - name: Build Blender ZIP
         run: |
-          mkdir -p release
-            zip -r release/NFS-HELPER-${RELEASE_VERSION}.zip . \
+            mkdir -p release
+            zip -r release/NFS-HELPER-${RELEASE_VERSION}.zip NFS_HELPER
                 -x ".git/*" ".github/*" "*.gitignore"
 
       - name: Upload release ZIP
