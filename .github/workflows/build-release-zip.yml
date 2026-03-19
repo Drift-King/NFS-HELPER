@@ -18,6 +18,15 @@ jobs:
           persist-credentials: true
           ref: main
 
+      - name: List repo files
+        run: |
+          echo "Root files:"
+          ls -l
+          echo "Scripts folder:"
+          ls -l scripts
+          echo "Docs folder:"
+          ls -l docs || echo "Docs folder does not exist yet"
+
       - name: Build Blender ZIP
         run: |
           mkdir -p release
@@ -70,7 +79,7 @@ jobs:
 
       - name: Update docs/index.html
         run: |
-          ./scripts/update-html.sh release/NFS-HELPER-${GITHUB_REF_NAME}.zip ${GITHUB_REF_NAME} ${{ steps.zipinfo.outputs.zip_size_kb }}
+          bash scripts/update-html.sh release/NFS-HELPER-${GITHUB_REF_NAME}.zip ${GITHUB_REF_NAME} ${{ steps.zipinfo.outputs.zip_size_kb }}
 
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
