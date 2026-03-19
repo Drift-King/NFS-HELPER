@@ -1,4 +1,4 @@
-name: Build Blender Add-on ZIP + Update Feed
+name: Build Blender Add-on ZIP + Update Docs
 
 on:
   release:
@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1️⃣ Checkout repo
+      # 1️⃣ Checkout repository
       - name: Checkout repository
         uses: actions/checkout@v3
 
@@ -43,19 +43,22 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # 5️⃣ Update index.json (replace existing version)
-      - name: Update index.json
+      # 5️⃣ Update index.json
+      - name: Update docs/index.json
         run: |
           FILE_URL="https://github.com/Drift-King/NFS-HELPER/releases/download/${GITHUB_REF_NAME}/NFS-HELPER-${GITHUB_REF_NAME}.zip"
 
+          # Ensure docs folder exists
+          mkdir -p docs
+
           # Create index.json if missing
-          if [ ! -f index.json ]; then
-            echo '{"version":"v1","data":[]}' > index.json
+          if [ ! -f docs/index.json ]; then
+            echo '{"version":"v1","data":[]}' > docs/index.json
           fi
 
           # Remove existing entry for this version
-          jq --arg ver "${GITHUB_REF_NAME}" '.data |= map(select(.version != $ver))' index.json > index.tmp.json
-          mv index.tmp.json index.json
+          jq --arg ver "${GITHUB_REF_NAME}" '.data |= map(select(.version != $ver))' docs/index.json > docs/index.tmp.json
+          mv docs/index.tmp.json docs/index.json
 
           # Add new entry
           jq --arg name "NFS Helper" \
@@ -65,81 +68,22 @@ jobs:
              --argjson size ${{ steps.zipinfo.outputs.zip_size_bytes }} \
              --arg hash "${{ steps.zipinfo.outputs.zip_sha256 }}" \
              '.data += [{"name": $name, "version": $version, "url": $url, "manifest": $manifest, "size": $size, "sha256": $hash}]' \
-             index.json > index.tmp.json && mv index.tmp.json index.json
+             docs/index.json > docs/index.tmp.json && mv docs/index.tmp.json docs/index.json
 
-          # Commit and push JSON
+          # Commit and push index.json
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add index.json
+          git add docs/index.json
           git commit -m "Update index.json for release ${GITHUB_REF_NAME}" || echo "No changes to commit"
           git push
 
-      # 6️⃣ Update releases.html safely
-      - name: Update releases.html
+      # 6️⃣ Update releases.html
+      - name: Update docs/releases.html
         run: |
-          ZIP_FILE=release/NFS-HELPER-${GITHUB_REF_NAME}.zip
-          SIZE_KB=${{ steps.zipinfo.outputs.zip_size_kb }}
-          FILE_URL="https://github.com/Drift-King/NFS-HELPER/releases/download/${GITHUB_REF_NAME}/NFS-HELPER-${GITHUB_REF_NAME}.zip?repository=index.json&blender_version_min=4.2.0"
+          ./update-html.sh release/NFS-HELPER-${GITHUB_REF_NAME}.zip ${GITHUB_REF_NAME} ${{ steps.zipinfo.outputs.zip_size_kb }}
 
-          # Create HTML template if missing
-          if [ ! -f releases.html ]; then
-            cat <<EOT > releases.html
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <title>Blender Extensions</title>
-</head>
-<body>
-<p>Blender Extension Listing:</p>
-<p>Add-on</p>
-<hr>
-<table>
-  <tr>
-    <th>ID</th>
-    <th>Name</th>
-    <th>Description</th>
-    <th>Website</th>
-    <th>Blender Versions</th>
-    <th>Python Versions</th>
-    <th>Platforms</th>
-    <th>Size</th>
-  </tr>
-</table>
-<center><p>Built $(date -u '+%Y-%m-%d, %H:%M UTC')</p></center>
-</body>
-</html>
-EOT
-          fi
-
-          # Remove any existing row for this version
-          grep -v "nfs_helper-${GITHUB_REF_NAME}" releases.html > releases.tmp.html
-
-          # Insert new row before </table> safely
-          awk -v url="$FILE_URL" -v ver="${GITHUB_REF_NAME}" -v size="$SIZE_KB" '{
-            if (/<\/table>/) {
-              print "  <tr>"
-              print "    <td><tt><a href=\"" url "\">nfs_helper-" ver "</a></tt></td>"
-              print "    <td>NFS HELPER</td>"
-              print "    <td>NFS HELPER</td>"
-              print "    <td><a href=\"https://github.com/Drift-King/nfs-helper\">link</a></td>"
-              print "    <td>4.2.0 - ~</td>"
-              print "    <td>all</td>"
-              print "    <td>all</td>"
-              print "    <td>" size " KB</td>"
-              print "  </tr>"
-            }
-            print
-          }' releases.tmp.html > releases.new.html
-
-          # Update build timestamp
-          sed -i "s/<center><p>Built .*<\/p><\/center>/<center><p>Built $(date -u '+%Y-%m-%d, %H:%M UTC')<\/p><\/center>/" releases.new.html
-
-          mv releases.new.html releases.html
-
-          # Commit and push HTML
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add releases.html
+          git add docs/releases.html
           git commit -m "Update releases.html for ${GITHUB_REF_NAME}" || echo "No changes to commit"
           git push
