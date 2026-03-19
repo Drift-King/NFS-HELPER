@@ -26,7 +26,6 @@ jobs:
       - name: Upload release ZIP
         uses: softprops/action-gh-release@v2
         with:
-          files: ${{ env.RELEASE_FILE }}
+          files: release/NFS-HELPER-${{ github.ref_name }}.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          RELEASE_FILE: release/NFS-HELPER-${{ github.ref_name }}.zip
