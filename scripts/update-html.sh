@@ -1,16 +1,20 @@
 #!/bin/bash
-ZIP_FILE=$1
-VERSION=$2
-SIZE_KB=$3
+# Usage: ./scripts/update-html.sh <zip_file> <version> <size_kb>
 
-DOCS_DIR="docs"
-FILE_URL="https://github.com/Drift-King/NFS-HELPER/releases/download/$VERSION/$(basename $ZIP_FILE)?repository=index.json&blender_version_min=4.2.0"
+ZIP_FILE="$1"
+VERSION="$2"
+SIZE_KB="$3"
 
-mkdir -p "$DOCS_DIR"
+HTML_FILE="docs/index.html"
+ZIP_NAME=$(basename "$ZIP_FILE")
+ZIP_URL="https://github.com/Drift-King/NFS-HELPER/releases/download/${VERSION}/${ZIP_NAME}"
 
-# Create template if missing
-if [ ! -f "$DOCS_DIR/releases.html" ]; then
-cat <<EOT > "$DOCS_DIR/releases.html"
+# Ensure docs folder exists
+mkdir -p docs
+
+# Create basic HTML if missing
+if [ ! -f "$HTML_FILE" ]; then
+cat > "$HTML_FILE" <<EOF
 <!DOCTYPE html>
 <html>
 <head>
@@ -33,33 +37,34 @@ cat <<EOT > "$DOCS_DIR/releases.html"
     <th>Size</th>
   </tr>
 </table>
-<center><p>Built $(date -u '+%Y-%m-%d, %H:%M UTC')</p></center>
+<center><p>Built $(date -u +"%Y-%m-%d, %H:%M UTC")</p></center>
 </body>
 </html>
-EOT
+EOF
 fi
 
-# Remove old row for this version
-grep -v "nfs_helper-$VERSION" "$DOCS_DIR/releases.html" > "$DOCS_DIR/releases.tmp.html"
+# Backup original HTML
+cp "$HTML_FILE" "$HTML_FILE.bak"
+
+# Remove existing row for this version if it exists
+grep -v "nfs_helper-${VERSION}" "$HTML_FILE.bak" > "$HTML_FILE.tmp"
 
 # Insert new row before </table>
-awk -v url="$FILE_URL" -v ver="$VERSION" -v size="$SIZE_KB" '{
-  if (/<\/table>/) {
+awk -v zip_url="$ZIP_URL" -v version="$VERSION" -v size_kb="$SIZE_KB" '
+  /<\/table>/ {
     print "  <tr>"
-    print "    <td><tt><a href=\"" url "\">nfs_helper-" ver "</a></tt></td>"
+    print "    <td><tt><a href=\"" zip_url "?repository=index.json&blender_version_min=4.2.0\">nfs_helper-" version "</a></tt></td>"
     print "    <td>NFS HELPER</td>"
     print "    <td>NFS HELPER</td>"
-    print "    <td><a href=\"https://github.com/Drift-King/nfs-helper\">link</a></td>"
+    print "    <td><a href=\"https://github.com/Drift-King/NFS-HELPER\">link</a></td>"
     print "    <td>4.2.0 - ~</td>"
     print "    <td>all</td>"
     print "    <td>all</td>"
-    print "    <td>" size " KB</td>"
+    print "    <td>" size_kb "KB</td>"
     print "  </tr>"
   }
-  print
-}' "$DOCS_DIR/releases.tmp.html" > "$DOCS_DIR/releases.new.html"
+  { print }
+' "$HTML_FILE.tmp" > "$HTML_FILE"
 
-# Update timestamp
-sed -i "s/<center><p>Built .*<\/p><\/center>/<center><p>Built $(date -u '+%Y-%m-%d, %H:%M UTC')<\/p><\/center>/" "$DOCS_DIR/releases.new.html"
-
-mv "$DOCS_DIR/releases.new.html" "$DOCS_DIR/releases.html"
+# Clean up
+rm "$HTML_FILE.tmp"
