@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1️⃣ Checkout the repo
+      # 1️⃣ Checkout repo
       - name: Checkout repository
         uses: actions/checkout@v3
 
@@ -23,7 +23,7 @@ jobs:
           zip -r release/NFS-HELPER-${GITHUB_REF_NAME}.zip nfs_helper
           ls -l release
 
-      # 3️⃣ Calculate size and SHA256
+      # 3️⃣ Calculate size & SHA256
       - name: Calculate size & SHA256
         id: zipinfo
         run: |
@@ -43,21 +43,21 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # 5️⃣ Update JSON feed (replace existing version if present)
+      # 5️⃣ Update index.json (replace existing version)
       - name: Update index.json
         run: |
           FILE_URL="https://github.com/Drift-King/NFS-HELPER/releases/download/${GITHUB_REF_NAME}/NFS-HELPER-${GITHUB_REF_NAME}.zip"
 
-          # Ensure index.json exists
+          # Create index.json if missing
           if [ ! -f index.json ]; then
             echo '{"version":"v1","data":[]}' > index.json
           fi
 
-          # Remove any existing entry for this version
+          # Remove existing entry for this version
           jq --arg ver "${GITHUB_REF_NAME}" '.data |= map(select(.version != $ver))' index.json > index.tmp.json
           mv index.tmp.json index.json
 
-          # Append updated entry
+          # Add new entry
           jq --arg name "NFS Helper" \
              --arg version "${GITHUB_REF_NAME}" \
              --arg url "$FILE_URL" \
@@ -74,14 +74,14 @@ jobs:
           git commit -m "Update index.json for release ${GITHUB_REF_NAME}" || echo "No changes to commit"
           git push
 
-      # 6️⃣ Update HTML table (replace existing version row)
+      # 6️⃣ Update releases.html (replace existing version row)
       - name: Update releases.html
         run: |
           ZIP_FILE=release/NFS-HELPER-${GITHUB_REF_NAME}.zip
           SIZE_KB=${{ steps.zipinfo.outputs.zip_size_kb }}
           FILE_URL="https://github.com/Drift-King/NFS-HELPER/releases/download/${GITHUB_REF_NAME}/NFS-HELPER-${GITHUB_REF_NAME}.zip?repository=index.json&blender_version_min=4.2.0"
 
-          # Ensure HTML exists (simple template if missing)
+          # Create HTML template if missing
           if [ ! -f releases.html ]; then
             cat <<EOT > releases.html
 <!DOCTYPE html>
@@ -113,25 +113,33 @@ EOT
           fi
 
           # Remove any existing row for this version
-          sed -i "/<tr>.*nfs_helper-${GITHUB_REF_NAME}.*<\/tr>/d" releases.html
+          grep -v "nfs_helper-${GITHUB_REF_NAME}" releases.html > releases.tmp.html
 
           # Insert new row before </table>
-          sed -i "/<\/table>/i \
-  <tr>\
-    <td><tt><a href=\"$FILE_URL\">nfs_helper-${GITHUB_REF_NAME}</a></tt></td>\
-    <td>NFS HELPER</td>\
-    <td>NFS HELPER</td>\
-    <td><a href=\"https://github.com/Drift-King/nfs-helper\">link</a></td>\
-    <td>4.2.0 - ~</td>\
-    <td>all</td>\
-    <td>all</td>\
-    <td>${SIZE_KB} KB</td>\
-  </tr>" releases.html
+          awk -v url="$FILE_URL" -v ver="${GITHUB_REF_NAME}" -v size="$SIZE_KB" '
+            /<\/table>/ {
+              print "  <tr>"
+              print "    <td><tt><a href=\"" url "\">nfs_helper-" ver "</a></tt></td>"
+              print "    <td>NFS HELPER</td>"
+              print "    <td>NFS HELPER</td>"
+              print "    <td><a href=\"https://github.com/Drift-King/nfs-helper\">link</a></td>"
+              print "    <td>4.2.0 - ~</td>"
+              print "    <td>all</td>"
+              print "    <td>all</td>"
+              print "    <td>" size " KB</td>"
+              print "  </tr>"
+            }
+            { print }
+          ' releases.tmp.html > releases.new.html
 
           # Update build timestamp
-          sed -i "s/<center><p>Built .*<\/p><\/center>/<center><p>Built $(date -u '+%Y-%m-%d, %H:%M UTC')<\/p><\/center>/" releases.html
+          sed -i "s/<center><p>Built .*<\/p><\/center>/<center><p>Built $(date -u '+%Y-%m-%d, %H:%M UTC')<\/p><\/center>/" releases.new.html
+
+          mv releases.new.html releases.html
 
           # Commit and push HTML
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
           git add releases.html
           git commit -m "Update releases.html for ${GITHUB_REF_NAME}" || echo "No changes to commit"
           git push
