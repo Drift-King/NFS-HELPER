@@ -74,7 +74,7 @@ jobs:
           git commit -m "Update index.json for release ${GITHUB_REF_NAME}" || echo "No changes to commit"
           git push
 
-      # 6️⃣ Update releases.html (replace existing version row)
+      # 6️⃣ Update releases.html safely
       - name: Update releases.html
         run: |
           ZIP_FILE=release/NFS-HELPER-${GITHUB_REF_NAME}.zip
@@ -115,9 +115,9 @@ EOT
           # Remove any existing row for this version
           grep -v "nfs_helper-${GITHUB_REF_NAME}" releases.html > releases.tmp.html
 
-          # Insert new row before </table>
-          awk -v url="$FILE_URL" -v ver="${GITHUB_REF_NAME}" -v size="$SIZE_KB" '
-            /<\/table>/ {
+          # Insert new row before </table> safely
+          awk -v url="$FILE_URL" -v ver="${GITHUB_REF_NAME}" -v size="$SIZE_KB" '{
+            if (/<\/table>/) {
               print "  <tr>"
               print "    <td><tt><a href=\"" url "\">nfs_helper-" ver "</a></tt></td>"
               print "    <td>NFS HELPER</td>"
@@ -129,8 +129,8 @@ EOT
               print "    <td>" size " KB</td>"
               print "  </tr>"
             }
-            { print }
-          ' releases.tmp.html > releases.new.html
+            print
+          }' releases.tmp.html > releases.new.html
 
           # Update build timestamp
           sed -i "s/<center><p>Built .*<\/p><\/center>/<center><p>Built $(date -u '+%Y-%m-%d, %H:%M UTC')<\/p><\/center>/" releases.new.html
