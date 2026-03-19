@@ -22,7 +22,7 @@ jobs:
         run: |
           mkdir -p release
           zip -r release/NFS-HELPER-${RELEASE_VERSION}.zip * \
-            -x "*.github*" "docs/*" "*.gitignore" "LICENSE"
+            -x "*.github*" "docs/*" "*.gitignore" "LICENSE" "workflows/*"
 
       # 4. Upload ZIP as release asset
       - name: Upload release ZIP
