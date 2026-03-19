@@ -12,29 +12,21 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Checkout repository
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # 2. Set version from release tag
-      - name: Set version
-        run: echo "RELEASE_VERSION=${GITHUB_REF_NAME}" >> $GITHUB_ENV
-
-      # 3. Build Blender-ready ZIP
       - name: Build Blender ZIP
         run: |
           mkdir -p release
-          # Create ZIP containing only the addon folder
-          zip -r release/NFS-HELPER-${RELEASE_VERSION}.zip nfs_helper
+          zip -r release/NFS-HELPER-${GITHUB_REF_NAME}.zip nfs_helper
 
-      # 4. Debug: confirm ZIP exists
-      - name: List release folder
+      - name: Debug
         run: ls -l release
 
-      # 5. Upload ZIP to the published release
       - name: Upload release ZIP
         uses: softprops/action-gh-release@v2
         with:
-          files: release/NFS-HELPER-${RELEASE_VERSION}.zip
+          files: ${{ env.RELEASE_FILE }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_FILE: release/NFS-HELPER-${{ github.ref_name }}.zip
