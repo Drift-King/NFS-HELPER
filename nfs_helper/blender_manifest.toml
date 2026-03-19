@@ -1,9 +1,9 @@
 schema_version = "1.0.0"
 
 id = "nfs_helper"
-version = "1.0.1"
-name = "NFS HELPER"
-tagline = "NFS HELPER"
+version = "1.0.2"
+name = "NFS Texture Helper"
+tagline = "Helper panel for texture alpha assignment and shadows"
 maintainer = "XXJOHNATHANXX"
 
 type = "add-on"
@@ -19,4 +19,4 @@ website = "https://github.com/Drift-King/nfs-helper"
 [links]
 repository = "https://github.com/Drift-King/nfs-helper"
 issues = "https://github.com/Drift-King/nfs-helper/issues"
-credit = "artistcdmj for opacity-helper that help create this"
+credit = "ArtistCDMJ (opacity-helper) – base code; maintained by XXJOHNATHANXX"

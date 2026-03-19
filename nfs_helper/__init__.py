@@ -20,8 +20,8 @@
 # ##### END GPL LICENSE BLOCK #####
 
 bl_info = {"name": "NFS Texture Helper",
-           "author": "CDMJ + XXJOHNATHANXX",
-           "version": (1, 0, 1),
+           "author": "ArtistCDMJ + XXJOHNATHANXX",
+           "version": (1, 0, 2),
            "blender": (4, 5, 7),
            "location": "Toolbar > NFS Helper",
            "description": "helper panel for texture alpha assignment and shadows",
@@ -29,6 +29,49 @@ bl_info = {"name": "NFS Texture Helper",
            "category": "Object"}
             
 import bpy
+
+from bpy.types import AddonPreferences
+from bpy.props import StringProperty
+
+def update_panel(self, context):
+    try:
+        bpy.utils.unregister_class(PANEL_PT_opacity_panel)
+    except:
+        pass
+
+    PANEL_PT_opacity_panel.bl_category = self.tab_name
+
+    bpy.utils.register_class(PANEL_PT_opacity_panel)
+
+
+class NFSHelperPreferences(AddonPreferences):
+    bl_idname = __package__
+
+    tab_name: StringProperty(
+        name="Tab Name",
+        description="Sidebar tab name",
+        default="NFS Helper",
+        update=update_panel
+    )
+
+	def draw(self, context):
+		layout = self.layout
+
+		# Tab setting
+		layout.prop(self, "tab_name")
+
+		layout.separator()
+
+		# Credits section
+		box = layout.box()
+		col = box.column(align=True)
+
+		col.label(text="Credits")
+		col.separator()
+		col.label(text="Code based on: ArtistCDMJ")
+		col.label(text="Maintained by: XXJOHNATHANXX")
+		row = col.row()
+		row.operator("wm.url_open", text="ArtistCDMJ").url = "https://github.com/ArtistCDMJ/Opacity-helper"
 
 def set_material_render_method(material, method):
     """Set the render method for the given material."""
@@ -452,7 +495,7 @@ class PANEL_PT_opacity_panel(bpy.types.Panel):
         # Material Preview Section
         box = layout.box()
         col = box.column(align=True)
-        col.label(text="Mat Preview")
+        col.label(text="Global Material Preview")
         row = col.row(align=True)
         row.operator("object.group_mat_preview_flat", text="FLAT")
         row.operator("object.group_mat_preview_sphere", text="SPHERE")
@@ -529,6 +572,7 @@ class OBJECT_OT_update_alpha_threshold(bpy.types.Operator):
         return None
 
 classes = [
+	NFSHelperPreferences,
     OBJECT_OT_update_alpha_threshold,
     OBJECT_OT_group_alpha_connect,
     OBJECT_OT_group_texstraight,
@@ -550,8 +594,14 @@ classes = [
 
 def register():
     add_alpha_threshold_property()
+
     for cls in classes:
         bpy.utils.register_class(cls)
+
+    # Apply saved tab name
+    prefs = bpy.context.preferences.addons.get(__package__)
+    if prefs:
+        PANEL_PT_opacity_panel.bl_category = prefs.preferences.tab_name
 
 def unregister():
     for cls in reversed(classes):
