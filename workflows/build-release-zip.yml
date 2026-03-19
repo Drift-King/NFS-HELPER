@@ -21,8 +21,8 @@ jobs:
       - name: Build Blender ZIP
         run: |
           mkdir -p release
-          zip -r release/NFS-HELPER-${RELEASE_VERSION}.zip . \
-            -x ".git/*" ".github/*" "docs/*" "*.gitignore" "LICENSE" "workflows/*"
+            zip -r release/NFS-HELPER-${RELEASE_VERSION}.zip . \
+                -x ".git/*" ".github/*" "*.gitignore"
 
       - name: Upload release ZIP
         uses: softprops/action-gh-release@v2
