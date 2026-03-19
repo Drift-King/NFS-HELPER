@@ -12,18 +12,15 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1️⃣ Checkout repository
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # 2️⃣ Build Blender ZIP
       - name: Build Blender ZIP
         run: |
           mkdir -p release
           zip -r release/NFS-HELPER-${GITHUB_REF_NAME}.zip nfs_helper
           ls -l release
 
-      # 3️⃣ Calculate size & SHA256
       - name: Calculate size & SHA256
         id: zipinfo
         run: |
@@ -35,7 +32,6 @@ jobs:
           echo "zip_size_kb=$SIZE_KB" >> $GITHUB_OUTPUT
           echo "zip_sha256=$HASH" >> $GITHUB_OUTPUT
 
-      # 4️⃣ Upload ZIP to release
       - name: Upload release ZIP
         uses: softprops/action-gh-release@v2
         with:
@@ -43,12 +39,10 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # 5️⃣ Update index.json
       - name: Update docs/index.json
         run: |
           FILE_URL="https://github.com/Drift-King/NFS-HELPER/releases/download/${GITHUB_REF_NAME}/NFS-HELPER-${GITHUB_REF_NAME}.zip"
 
-          # Ensure docs folder exists
           mkdir -p docs
 
           # Create index.json if missing
@@ -77,10 +71,9 @@ jobs:
           git commit -m "Update index.json for release ${GITHUB_REF_NAME}" || echo "No changes to commit"
           git push
 
-      # 6️⃣ Update releases.html
       - name: Update docs/releases.html
         run: |
-          ./update-html.sh release/NFS-HELPER-${GITHUB_REF_NAME}.zip ${GITHUB_REF_NAME} ${{ steps.zipinfo.outputs.zip_size_kb }}
+          ./scripts/update-html.sh release/NFS-HELPER-${GITHUB_REF_NAME}.zip ${GITHUB_REF_NAME} ${{ steps.zipinfo.outputs.zip_size_kb }}
 
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
