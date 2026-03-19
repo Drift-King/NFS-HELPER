@@ -19,3 +19,4 @@ website = "https://github.com/Drift-King/nfs-helper"
 [links]
 repository = "https://github.com/Drift-King/nfs-helper"
 issues = "https://github.com/Drift-King/nfs-helper/issues"
+credit = "artistcdmj for opacity-helper that help create this"
