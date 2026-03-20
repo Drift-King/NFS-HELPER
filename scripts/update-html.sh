@@ -3,13 +3,12 @@
 
 ZIP_FILE="$1"
 VERSION="$2"
-SIZE_KB="$3"
+SIZE_KB="${3:-0}"  # Default to 0 KB if not provided
 
 HTML_FILE="docs/index.html"
 ZIP_NAME=$(basename "$ZIP_FILE")
 ZIP_URL="https://github.com/Drift-King/NFS-HELPER/releases/download/${VERSION}/${ZIP_NAME}"
 
-# Ensure docs folder exists
 mkdir -p docs
 
 # Create basic HTML if missing
@@ -25,6 +24,7 @@ cat > "$HTML_FILE" <<EOF
 <p>Blender Extension Listing:</p>
 <p>Add-on</p>
 <hr>
+<!-- extensions table -->
 <table>
   <tr>
     <th>ID</th>
@@ -43,28 +43,48 @@ cat > "$HTML_FILE" <<EOF
 EOF
 fi
 
-# Backup original HTML
 cp "$HTML_FILE" "$HTML_FILE.bak"
 
-# Remove existing row for this version if it exists
-grep -v "nfs_helper-${VERSION}" "$HTML_FILE.bak" > "$HTML_FILE.tmp"
-
-# Insert new row before </table>
-awk -v zip_url="$ZIP_URL" -v version="$VERSION" -v size_kb="$SIZE_KB" '
-  /<\/table>/ {
-    print "  <tr>"
-    print "    <td><tt><a href=\"" zip_url "?repository=index.json&blender_version_min=4.2.0\">nfs_helper-" version "</a></tt></td>"
-    print "    <td>NFS HELPER</td>"
-    print "    <td>NFS HELPER</td>"
-    print "    <td><a href=\"https://github.com/Drift-King/NFS-HELPER\">link</a></td>"
-    print "    <td>4.2.0 - ~</td>"
-    print "    <td>all</td>"
-    print "    <td>all</td>"
-    print "    <td>" size_kb "KB</td>"
-    print "  </tr>"
+# Remove existing row for this version
+awk -v ver="$VERSION" '
+  /<tr>/ {skip=0}
+  /<tr>/,/<\/tr>/ {
+    if ($0 ~ ver) {skip=1}
+    if (!skip) {print}
+    next
   }
-  { print }
+  {print}
+' "$HTML_FILE.bak" > "$HTML_FILE.tmp"
+
+# Extract existing rows
+awk '/<tr>/,/<\/tr>/ {if ($0 !~ /<th>/) print $0}' "$HTML_FILE.tmp" > rows.txt
+
+# Add new row
+NEW_ROW="  <tr>
+    <td><tt><a href=\"$ZIP_URL?repository=index.json&blender_version_min=4.2.0\">nfs_helper-$VERSION</a></tt></td>
+    <td>NFS HELPER</td>
+    <td>NFS HELPER</td>
+    <td><a href=\"https://github.com/Drift-King/NFS-HELPER\">link</a></td>
+    <td>4.2.0 - ~</td>
+    <td>all</td>
+    <td>all</td>
+    <td>$SIZE_KB KB</td>
+  </tr>"
+echo "$NEW_ROW" >> rows.txt
+
+# Sort rows by version descending
+sort -r -V -k1,1 rows.txt > rows_sorted.txt
+
+# Rebuild HTML
+awk -v rows_file="rows_sorted.txt" '
+  /<!-- extensions table -->/ {in_table=1}
+  {print}
+  in_table && /<\/table>/ {
+    while ((getline row < rows_file) > 0) print row
+    in_table=0
+  }
 ' "$HTML_FILE.tmp" > "$HTML_FILE"
 
-# Clean up
-rm "$HTML_FILE.tmp"
+rm "$HTML_FILE.tmp" rows.txt rows_sorted.txt
+
+echo "Updated $HTML_FILE with nfs_helper-$VERSION ($SIZE_KB KB)"

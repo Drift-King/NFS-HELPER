@@ -1,87 +1,78 @@
-name: Build Blender Add-on ZIP + Update Docs
+name: Build & Update NFS HELPER
 
 on:
-  release:
-    types: [published]
-
-permissions:
-  contents: write
+  push:
+    tags:
+      - '*'       # Trigger on any tag like 1.0.0, 1.0.1
+  workflow_dispatch: # Allow manual trigger
 
 jobs:
-  build_release:
+  build-and-update:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
         with:
-          persist-credentials: true
-          ref: main
+          python-version: "3.x"
 
-      - name: List repo files
+      - name: Create ZIP of addon
         run: |
-          echo "Root files:"
-          ls -l
-          echo "Scripts folder:"
-          ls -l scripts || "scripts folder does not exist yet"
-          echo "Docs folder:"
-          ls -l docs || echo "Docs folder does not exist yet"
+          VERSION=${GITHUB_REF_NAME}
+          ZIP_NAME="NFS-HELPER-${VERSION}.zip"
+          zip -r "$ZIP_NAME" nfs_helper/
+          echo "ZIP created: $ZIP_NAME"
 
-      - name: Build Blender ZIP
+      - name: Update cumulative index.json
         run: |
-          mkdir -p release
-          zip -r release/NFS-HELPER-${GITHUB_REF_NAME}.zip nfs_helper
-          ls -l release
-
-      - name: Calculate size & SHA256
-        id: zipinfo
-        run: |
-          ZIP_FILE=release/NFS-HELPER-${GITHUB_REF_NAME}.zip
-          SIZE_BYTES=$(stat -c%s "$ZIP_FILE")
-          SIZE_KB=$(awk "BEGIN {printf \"%.1f\", $SIZE_BYTES/1024}")
-          HASH=$(sha256sum "$ZIP_FILE" | cut -d ' ' -f1)
-          echo "zip_size_bytes=$SIZE_BYTES" >> $GITHUB_OUTPUT
-          echo "zip_size_kb=$SIZE_KB" >> $GITHUB_OUTPUT
-          echo "zip_sha256=$HASH" >> $GITHUB_OUTPUT
-
-      - name: Upload release ZIP
-        uses: softprops/action-gh-release@v2
-        with:
-          files: release/NFS-HELPER-${{ github.ref_name }}.zip
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Update docs/index.json
-        run: |
-          FILE_URL="https://github.com/Drift-King/NFS-HELPER/releases/download/${GITHUB_REF_NAME}/NFS-HELPER-${GITHUB_REF_NAME}.zip"
           mkdir -p docs
-          if [ ! -f docs/index.json ]; then
-            echo '{"version":"v1","data":[]}' > docs/index.json
+          VERSION=${GITHUB_REF_NAME}
+          ZIP_NAME="NFS-HELPER-${VERSION}.zip"
+          SIZE_KB=$(du -k "$ZIP_NAME" | cut -f1)
+
+          # Load existing JSON or create empty array
+          if [ -f docs/index.json ]; then
+            jq '.' docs/index.json > docs/index_tmp.json
+          else
+            echo "[]" > docs/index_tmp.json
           fi
 
-          jq --arg ver "${GITHUB_REF_NAME}" '.data |= map(select(.version != $ver))' docs/index.json > docs/index.tmp.json
-          mv docs/index.tmp.json docs/index.json
+          # Append new version
+          jq --arg v "$VERSION" \
+             --arg u "https://github.com/Drift-King/NFS-HELPER/releases/download/$VERSION/$ZIP_NAME" \
+             --arg s "$SIZE_KB" \
+             '. + [{"id":"nfs_helper","name":"NFS HELPER","version":$v,"url":$u,"blender_version_min":"4.2.0","size_kb":($s|tonumber)}]' \
+             docs/index_tmp.json > docs/index.json
 
-          jq --arg name "NFS Helper" \
-             --arg version "${GITHUB_REF_NAME}" \
-             --arg url "$FILE_URL" \
-             --arg manifest "nfs_helper/blender_manifest.toml" \
-             --argjson size ${{ steps.zipinfo.outputs.zip_size_bytes }} \
-             --arg hash "${{ steps.zipinfo.outputs.zip_sha256 }}" \
-             '.data += [{"name": $name, "version": $version, "url": $url, "manifest": $manifest, "size": $size, "sha256": $hash}]' \
-             docs/index.json > docs/index.tmp.json && mv docs/index.tmp.json docs/index.json
+          # Sort descending by version
+          jq 'sort_by(.version) | reverse' docs/index.json > docs/index_sorted.json
+          mv docs/index_sorted.json docs/index.json
+          rm docs/index_tmp.json
 
+      - name: Update index.html
+        run: |
+          VERSION=${GITHUB_REF_NAME}
+          ZIP_FILE="NFS-HELPER-${VERSION}.zip"
+          SIZE_KB=$(du -k "$ZIP_FILE" | cut -f1)
+          chmod +x ./scripts/update-html.sh
+          ./scripts/update-html.sh "$ZIP_FILE" "$VERSION" "$SIZE_KB"
+
+      - name: Commit updated docs
+        run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add docs/index.json
-          git commit -m "Update index.json for release ${GITHUB_REF_NAME}" || echo "No changes to commit"
+          git add docs/index.html docs/index.json
+          git commit -m "Update docs for ${GITHUB_REF_NAME}" || echo "No changes to commit"
           git push origin main
 
-      - name: Update docs/index.html
-        run: bash scripts/update-html.sh release/NFS-HELPER-${GITHUB_REF_NAME}.zip ${GITHUB_REF_NAME} ${{ steps.zipinfo.outputs.zip_size_kb }}
-
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add docs/index.html
-          git commit -m "Update index.html for ${GITHUB_REF_NAME}" || echo "No changes to commit"
-          git push origin main
+      - name: Create GitHub Release
+        uses: ncipollo/release-action@v1
+        with:
+          tag: ${{ github.ref_name }}
+          name: ${{ github.ref_name }}
+          draft: false
+          prerelease: false
+          files: NFS-HELPER-${{ github.ref_name }}.zip
