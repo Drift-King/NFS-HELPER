@@ -11,6 +11,20 @@ ZIP_URL="https://github.com/Drift-King/NFS-HELPER/releases/download/${VERSION}/$
 
 mkdir -p docs
 
+# --- Wait for ZIP file to exist (up to 60 seconds) ---
+MAX_WAIT=60
+WAITED=0
+while [ ! -f "$ZIP_FILE" ]; do
+    if [ "$WAITED" -ge "$MAX_WAIT" ]; then
+        echo "Error: ZIP file $ZIP_FILE not found after $MAX_WAIT seconds"
+        exit 1
+    fi
+    echo "Waiting for $ZIP_FILE to be created..."
+    sleep 2
+    WAITED=$((WAITED + 2))
+done
+echo "$ZIP_FILE found, proceeding..."
+
 # Create basic HTML if missing
 if [ ! -f "$HTML_FILE" ]; then
 cat > "$HTML_FILE" <<EOF
@@ -43,6 +57,7 @@ cat > "$HTML_FILE" <<EOF
 EOF
 fi
 
+# Backup original HTML
 cp "$HTML_FILE" "$HTML_FILE.bak"
 
 # Remove existing row for this version
