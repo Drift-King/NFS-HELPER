@@ -23,7 +23,7 @@ jobs:
           echo "Root files:"
           ls -l
           echo "Scripts folder:"
-          ls -l scripts
+          ls -l scripts || "scripts folder does not exist yet"
           echo "Docs folder:"
           ls -l docs || echo "Docs folder does not exist yet"
 
@@ -78,8 +78,7 @@ jobs:
           git push origin main
 
       - name: Update docs/index.html
-        run: |
-          bash scripts/update-html.sh release/NFS-HELPER-${GITHUB_REF_NAME}.zip ${GITHUB_REF_NAME} ${{ steps.zipinfo.outputs.zip_size_kb }}
+        run: ./scripts/update-html.sh release/NFS-HELPER-${GITHUB_REF_NAME}.zip ${GITHUB_REF_NAME} ${{ steps.zipinfo.outputs.zip_size_kb }}
 
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
