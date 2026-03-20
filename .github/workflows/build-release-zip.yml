@@ -3,8 +3,11 @@ name: Build & Update NFS HELPER
 on:
   push:
     tags:
-      - '*'       # Trigger on any tag like 1.0.0, 1.0.1
-  workflow_dispatch: # Allow manual trigger
+      - '*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   build-and-update:
@@ -22,15 +25,35 @@ jobs:
       - name: Create ZIP of addon
         run: |
           VERSION=${GITHUB_REF_NAME}
-          ZIP_NAME="NFS-HELPER-${VERSION}.zip"
+          mkdir -p release
+          ZIP_NAME="release/NFS-HELPER-${VERSION}.zip"
+
           zip -r "$ZIP_NAME" nfs_helper/
-          echo "ZIP created: $ZIP_NAME"
+
+          echo "ZIP created:"
+          ls -lh release/
+
+      - name: Create GitHub Release
+        uses: ncipollo/release-action@v1
+        with:
+          tag: ${{ github.ref_name }}
+          name: ${{ github.ref_name }}
+          draft: false
+          prerelease: false
+          files: release/NFS-HELPER-${{ github.ref_name }}.zip
 
       - name: Update cumulative index.json
         run: |
           mkdir -p docs
           VERSION=${GITHUB_REF_NAME}
           ZIP_NAME="release/NFS-HELPER-${VERSION}.zip"
+
+          # Fail early if missing
+          if [ ! -f "$ZIP_NAME" ]; then
+            echo "ERROR: ZIP not found at $ZIP_NAME"
+            exit 1
+          fi
+
           SIZE_KB=$(du -k "$ZIP_NAME" | cut -f1)
 
           # Load existing JSON or create empty array
@@ -40,18 +63,28 @@ jobs:
             echo "[]" > docs/index_tmp.json
           fi
 
-          # Remove any existing entry for this version (handles re-releases)
-          jq --arg ver "$VERSION" '. |= map(select(.version != $ver))' docs/index_tmp.json > docs/index_tmp2.json
+          # Remove existing version
+          jq --arg ver "$VERSION" \
+            '. |= map(select(.version != $ver))' \
+            docs/index_tmp.json > docs/index_tmp2.json
+
           mv docs/index_tmp2.json docs/index_tmp.json
 
           # Append new version
           jq --arg v "$VERSION" \
-             --arg u "https://github.com/Drift-King/NFS-HELPER/releases/download/$VERSION/$ZIP_NAME" \
+             --arg u "https://github.com/Drift-King/NFS-HELPER/releases/download/$VERSION/NFS-HELPER-$VERSION.zip" \
              --arg s "$SIZE_KB" \
-             '. + [{"id":"nfs_helper","name":"NFS HELPER","version":$v,"url":$u,"blender_version_min":"4.2.0","size_kb":($s|tonumber)}]' \
+             '. + [{
+               "id":"nfs_helper",
+               "name":"NFS HELPER",
+               "version":$v,
+               "url":$u,
+               "blender_version_min":"4.2.0",
+               "size_kb":($s|tonumber)
+             }]' \
              docs/index_tmp.json > docs/index.json
 
-          # Sort descending by version
+          # Sort descending
           jq 'sort_by(.version) | reverse' docs/index.json > docs/index_sorted.json
           mv docs/index_sorted.json docs/index.json
           rm docs/index_tmp.json
@@ -62,23 +95,16 @@ jobs:
           ZIP_FILE="release/NFS-HELPER-${VERSION}.zip"
           SIZE_KB=$(du -k "$ZIP_FILE" | cut -f1)
 
-          # Ensure script exists and is executable
-          ls -l scripts
+          chmod +x scripts/update-html.sh
           bash ./scripts/update-html.sh "$ZIP_FILE" "$VERSION" "$SIZE_KB"
 
       - name: Commit updated docs
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add docs/index.html docs/index.json
-          git commit -m "Update docs for ${GITHUB_REF_NAME}" || echo "No changes to commit"
-          git push origin main
 
-      - name: Create GitHub Release
-        uses: ncipollo/release-action@v1
-        with:
-          tag: ${{ github.ref_name }}
-          name: ${{ github.ref_name }}
-          draft: false
-          prerelease: false
-          files: release/NFS-HELPER-${{ github.ref_name }}.zip
+          git add docs/index.html docs/index.json
+
+          git commit -m "Update docs for ${GITHUB_REF_NAME}" || echo "No changes to commit"
+
+          git push origin HEAD:main
