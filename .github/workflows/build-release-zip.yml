@@ -30,7 +30,7 @@ jobs:
         run: |
           mkdir -p docs
           VERSION=${GITHUB_REF_NAME}
-          ZIP_NAME="NFS-HELPER-${VERSION}.zip"
+          ZIP_NAME="release/NFS-HELPER-${VERSION}.zip"
           SIZE_KB=$(du -k "$ZIP_NAME" | cut -f1)
 
           # Load existing JSON or create empty array
@@ -39,6 +39,10 @@ jobs:
           else
             echo "[]" > docs/index_tmp.json
           fi
+
+          # Remove any existing entry for this version (handles re-releases)
+          jq --arg ver "$VERSION" '. |= map(select(.version != $ver))' docs/index_tmp.json > docs/index_tmp2.json
+          mv docs/index_tmp2.json docs/index_tmp.json
 
           # Append new version
           jq --arg v "$VERSION" \
@@ -55,10 +59,12 @@ jobs:
       - name: Update index.html
         run: |
           VERSION=${GITHUB_REF_NAME}
-          ZIP_FILE="NFS-HELPER-${VERSION}.zip"
+          ZIP_FILE="release/NFS-HELPER-${VERSION}.zip"
           SIZE_KB=$(du -k "$ZIP_FILE" | cut -f1)
-          chmod +x ./scripts/update-html.sh
-          ./scripts/update-html.sh "$ZIP_FILE" "$VERSION" "$SIZE_KB"
+
+          # Ensure script exists and is executable
+          ls -l scripts
+          bash ./scripts/update-html.sh "$ZIP_FILE" "$VERSION" "$SIZE_KB"
 
       - name: Commit updated docs
         run: |
@@ -75,4 +81,4 @@ jobs:
           name: ${{ github.ref_name }}
           draft: false
           prerelease: false
-          files: NFS-HELPER-${{ github.ref_name }}.zip
+          files: release/NFS-HELPER-${{ github.ref_name }}.zip
