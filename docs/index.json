@@ -7,7 +7,7 @@
       "id": "nfs_helper",
       "name": "NFS Texture Helper",
       "tagline": "Helper panel for texture alpha assignment and shadows",
-      "version": "1.0.w1",
+      "version": "1.0.1",
       "type": "add-on",
       "maintainer": "XXJOHNATHANXX",
       "license": ["SPDX:GPL-2.0-or-later"],
