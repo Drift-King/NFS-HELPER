@@ -83,7 +83,7 @@ jobs:
 
       - name: Sort versions (newest first)
         run: |
-          jq '.data |= sort_by(.version) | reverse' docs/index.json > tmp.json && mv tmp.json docs/index.json
+          jq '.data |= sort_by((.version | split(".") | map(tonumber))) | reverse' docs/index.json > tmp.json && mv tmp.json docs/index.json
 
       - name: Build index.html
         run: |
@@ -102,15 +102,20 @@ jobs:
             <ul>
           EOF
 
-          jq -r '.data[] |
-            "<li><b>\(.version)</b> - <a href=\"\(.archive_url)\">Download</a> (\(.archive_size) bytes)</li>"' docs/index.json >> docs/index.html
+          # Use jq to loop through the JSON in semantic version order
+          jq -r '.data
+                 | sort_by((.version | split(".") | map(tonumber))) 
+                 | reverse
+                 | .[]
+                 | "<li><b>\(.version)</b> - <a href=\"\(.archive_url)\">Download</a> (\(.archive_size) bytes)</li>"' docs/index.json \
+            >> docs/index.html
 
           cat <<EOF >> docs/index.html
             </ul>
           </body>
           </html>
           EOF
-
+          
       - name: Commit and push changes
         run: |
           git config user.name "github-actions"
