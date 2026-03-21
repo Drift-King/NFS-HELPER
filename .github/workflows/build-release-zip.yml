@@ -1,4 +1,4 @@
-ame: Build Zip & Create Release
+name: Build Zip & Create Release
 
 on:
   push:
