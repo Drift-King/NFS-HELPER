@@ -3,8 +3,13 @@ name: Build Zip & Create Release
 on:
   push:
     tags:
-      - '*'
+      - '*'  # Trigger on all tags
   workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to release (e.g. 1.0.0)'
+        required: true
+        default: ''
 
 permissions:
   contents: write
@@ -12,26 +17,41 @@ permissions:
 jobs:
   build-and-release:
     runs-on: ubuntu-latest
+    if: ${{ github.ref_name != 'main' && github.event.inputs.tag != 'main' }}
 
     steps:
+      - name: Determine tag
+        id: tag
+        run: |
+          # Use workflow_dispatch input if provided, otherwise github ref_name
+          if [ -n "${GITHUB_EVENT_PATH}" ]; then
+            TAG=$(jq -r '.inputs.tag' "$GITHUB_EVENT_PATH")
+          else
+            TAG=${GITHUB_REF_NAME}
+          fi
+
+          if [ "$TAG" = "main" ] || [ -z "$TAG" ]; then
+            echo "Tag is 'main' or empty. Exiting."
+            exit 0
+          fi
+
+          echo "RELEASE_TAG=$TAG" >> $GITHUB_ENV
+
       - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Create ZIP of addon
         run: |
-          VERSION=${GITHUB_REF_NAME}
-          ZIP_NAME="NFS-HELPER-${VERSION}.zip"
-
+          ZIP_NAME="NFS-HELPER-${RELEASE_TAG}.zip"
           mkdir -p release
           zip -r "release/$ZIP_NAME" nfs_helper/
-
           echo "Created release/$ZIP_NAME"
 
       - name: Create GitHub Release and upload ZIP
         uses: ncipollo/release-action@v1
         with:
-          tag: ${{ github.ref_name }}
-          name: ${{ github.ref_name }}
+          tag: ${{ env.RELEASE_TAG }}
+          name: ${{ env.RELEASE_TAG }}
           draft: false
           prerelease: false
-          artifacts: release/NFS-HELPER-${{ github.ref_name }}.zip
+          artifacts: release/NFS-HELPER-${{ env.RELEASE_TAG }}.zip
