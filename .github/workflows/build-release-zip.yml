@@ -2,50 +2,29 @@ name: Build Blender Add-on ZIP
 
 on:
   release:
-    types: [published]  # triggers when a release is published
+    types: [published]
+
+permissions:
+  contents: write
 
 jobs:
   build_zip:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Checkout repository
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v3
 
-      # 2. Set version from release tag
-      - name: Set version
-        run: |
-          RELEASE_VERSION=${GITHUB_REF#refs/tags/}
-          echo "RELEASE_VERSION=$RELEASE_VERSION" >> $GITHUB_ENV
-
-      # 3. Create a ZIP with only nfs_helper/ contents
       - name: Build Blender ZIP
         run: |
-          if [ ! -d "nfs_helper" ]; then
-            echo "Folder nfs_helper/ not found. Exiting."
-            exit 1
-          fi
-
           mkdir -p release
-          cd nfs_helper
-          zip -r "../release/NFS-HELPER-${RELEASE_VERSION}.zip" ./*
-          cd ..
+          zip -r release/NFS-HELPER-${GITHUB_REF_NAME}.zip nfs_helper
+      - name: Debug
+        run: ls -l release
 
-          echo "Created release/NFS-HELPER-${RELEASE_VERSION}.zip"
-
-      # 4. Upload ZIP as release asset (update if release exists)
       - name: Upload release ZIP
-        uses: ncipollo/release-action@v1
+        uses: softprops/action-gh-release@v2
         with:
-          tag: ${{ github.ref_name }}
-          name: ${{ github.ref_name }}
-          draft: false
-          prerelease: false
-          artifacts: release/NFS-HELPER-${{ github.ref_name }}.zip
-          skipIfReleaseExists: false       # ensures release is updated
-          replacesArtifacts: true          # replaces old ZIP if it exists
-          immutableCreate: false           # allows modifying existing release
-          generateReleaseNotes: false
+          files: release/NFS-HELPER-${{ github.ref_name }}.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
