@@ -1,0 +1,75 @@
+name: Build Index Files
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-index:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      # Prevent race condition (ZIP not ready yet)
+      - name: Wait for assets
+        run: sleep 30
+
+      - name: Fetch releases
+        run: |
+          curl -s https://api.github.com/repos/${{ github.repository }}/releases > releases.json
+
+      - name: Generate index.json
+        run: |
+          mkdir -p docs
+
+          echo '{"version":"v1","blocklist":[],"data":[]}' > docs/index.json
+
+          jq -c '.[]' releases.json | while read release; do
+            TAG=$(echo "$release" | jq -r '.tag_name')
+
+            # Normalize version (remove leading v)
+            VERSION=$(echo "$TAG" | sed 's/^v//')
+
+            ASSET=$(echo "$release" | jq -c '.assets[] | select(.name | endswith(".zip"))')
+
+            if [ -z "$ASSET" ]; then
+              continue
+            fi
+
+            URL=$(echo "$ASSET" | jq -r '.browser_download_url')
+            SIZE=$(echo "$ASSET" | jq -r '.size')
+
+            echo "Processing $VERSION"
+
+            curl -L "$URL" -o temp.zip
+
+            HASH=$(sha256sum temp.zip | awk '{print $1}')
+
+            jq --arg version "$VERSION" \
+               --arg url "$URL" \
+               --arg hash "sha256:$HASH" \
+               --argjson size "$SIZE" \
+               '.data += [{
+                 "schema_version": "1.0.0",
+                 "id": "nfs_helper",
+                 "name": "NFS Texture Helper",
+                 "tagline": "Helper panel for texture alpha assignment and shadows",
+                 "version": $version,
+                 "type": "add-on",
+                 "maintainer": "XXJOHNATHANXX",
+                 "license": ["SPDX:GPL-2.0-or-later"],
+                 "blender_version_min": "4.2.0",
+                 "website": "https://github.com/Drift-King/nfs-helper",
+                 "tags": ["Utilities"],
+                 "archive_url": $url,
+                 "archive_size": $size,
+                 "archive_hash": $hash
+               }]' docs/index.json > tmp.json && mv tmp.json docs/index.json
+
+          done
