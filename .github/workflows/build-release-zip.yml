@@ -1,8 +1,6 @@
-name: Build Zip & Create Release
-
 on:
   release:
-    types: [published]  # Trigger on published releases
+    types: [published]   # Trigger workflow when a release is published
   workflow_dispatch:
 
 permissions:
@@ -18,19 +16,19 @@ jobs:
 
       - name: Create ZIP of addon
         run: |
-          VERSION=${GITHUB_REF_NAME}
+          VERSION=${{ github.event.release.tag_name }}
           ZIP_NAME="NFS-HELPER-${VERSION}.zip"
 
           mkdir -p release
-          zip -r "release/$ZIP_NAME" nfs_helper/
+          zip -r "release/$ZIP_NAME" nfs_helper
 
           echo "Created release/$ZIP_NAME"
 
-      - name: Create GitHub Release and upload ZIP
+      - name: Upload ZIP to release
         uses: ncipollo/release-action@v1
         with:
-          tag: ${{ github.ref_name }}       # GitHub release tag = pushed tag
-          name: ${{ github.ref_name }}      # Release name = tag
+          tag: ${{ github.event.release.tag_name }}       # Use the release tag, not main
+          name: ${{ github.event.release.tag_name }}      # Release name = tag
           draft: false
           prerelease: false
-          files: "release/NFS-HELPER-${{ github.ref_name }}.zip"  # ZIP filename includes tag
+          files: "release/NFS-HELPER-${{ github.event.release.tag_name }}.zip"
