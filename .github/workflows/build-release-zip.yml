@@ -35,3 +35,4 @@ jobs:
           prerelease: false
           artifact: "release/NFS-HELPER-${{ github.event.release.tag_name }}.zip"
           allowUpdates: true
+          makeLatest: true
