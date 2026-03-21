@@ -34,4 +34,4 @@ jobs:
           name: ${{ github.ref_name }}
           draft: false
           prerelease: false
-          artifacts: release/NFS-HELPER-${{ github.ref_name }}.zip
+          files: release/NFS-HELPER-${{ github.ref_name }}.zip
