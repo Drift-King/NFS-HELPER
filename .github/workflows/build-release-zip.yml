@@ -1,3 +1,5 @@
+name: Build Release Zip
+
 on:
   release:
     types: [published]   # Trigger workflow when a release is published
