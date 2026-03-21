@@ -16,7 +16,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Wait a few seconds to ensure the release assets are available
+      # Wait to ensure release assets are available
       - name: Wait for release assets
         run: sleep 10
 
@@ -48,7 +48,7 @@ jobs:
 
             echo "Processing version $VERSION"
 
-            # Download the ZIP to calculate SHA256
+            # Download ZIP to calculate SHA256
             curl -L "$URL" -o temp.zip
             HASH=$(sha256sum temp.zip | awk '{print $1}')
 
@@ -73,10 +73,9 @@ jobs:
                  "archive_size": $size,
                  "archive_hash": $hash
                }]' docs/index.json > tmp.json && mv tmp.json docs/index.json
-
           done
 
-      # Semantic version sort (newest first, safely)
+      # Semantic version sort (single safe step)
       - name: Sort index.json by semantic version
         run: |
           jq '.data |= map(.version = (.version | tostring | ltrimstr("v"))) 
@@ -99,7 +98,6 @@ jobs:
             <ul>
           EOF
 
-          # Loop through JSON in semantic version order
           jq -r '.data
                  | sort_by((.version | split(".") | map(tonumber))) 
                  | reverse
