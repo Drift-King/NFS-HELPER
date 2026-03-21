@@ -1,4 +1,5 @@
 name: Build Zip & Upload Release
+
 on:
   push:
     tags:
@@ -37,3 +38,5 @@ jobs:
           draft: false
           prerelease: false
           artifacts: release/NFS-HELPER-${{ github.ref_name }}.zip
+          skipIfReleaseExists: false    # Update release if it exists
+          replaceArtifacts: true        # Replace old ZIP if present
