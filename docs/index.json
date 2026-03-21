@@ -7,26 +7,6 @@
       "id": "nfs_helper",
       "name": "NFS Texture Helper",
       "tagline": "Helper panel for texture alpha assignment and shadows",
-      "version": "main",
-      "type": "add-on",
-      "maintainer": "XXJOHNATHANXX",
-      "license": [
-        "SPDX:GPL-2.0-or-later"
-      ],
-      "blender_version_min": "4.2.0",
-      "website": "https://github.com/Drift-King/nfs-helper",
-      "tags": [
-        "Utilities"
-      ],
-      "archive_url": "https://github.com/Drift-King/NFS-HELPER/releases/download/main/NFS-HELPER-main.zip",
-      "archive_size": 5369,
-      "archive_hash": "sha256:4baa40bbca536d07a8d721e612c05527c3274725cfe1150ffc66a55b8cd448d6"
-    },
-    {
-      "schema_version": "1.0.0",
-      "id": "nfs_helper",
-      "name": "NFS Texture Helper",
-      "tagline": "Helper panel for texture alpha assignment and shadows",
       "version": "1.0.1",
       "type": "add-on",
       "maintainer": "XXJOHNATHANXX",
