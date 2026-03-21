@@ -33,4 +33,4 @@ jobs:
           name: ${{ github.event.release.tag_name }}      # Release name = tag
           draft: false
           prerelease: false
-          files: "release/NFS-HELPER-${{ github.event.release.tag_name }}.zip"
+          artifacts: "release/NFS-HELPER-${{ github.event.release.tag_name }}.zip"
