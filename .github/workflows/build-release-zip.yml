@@ -30,6 +30,6 @@ jobs:
       - name: Upload release ZIP
         uses: softprops/action-gh-release@v1
         with:
-          files: release/NFS-HELPER-$RELEASE_VERSION.zip
+          files: NFS-HELPER-$RELEASE_VERSION.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
