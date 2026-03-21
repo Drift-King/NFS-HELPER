@@ -54,7 +54,7 @@ class NFSHelperPreferences(AddonPreferences):
         update=update_panel
     )
 
-	def draw(self, context):
+    def draw(self, context):
 		layout = self.layout
 
 		# Tab setting
