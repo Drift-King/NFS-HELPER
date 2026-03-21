@@ -18,7 +18,7 @@ jobs:
 
       # Wait to ensure release assets are available
       - name: Wait for release assets
-        run: sleep 10
+        run: sleep 15
 
       - name: Fetch releases from GitHub API
         run: |
@@ -62,7 +62,7 @@ jobs:
                  "id": "nfs_helper",
                  "name": "NFS Texture Helper",
                  "tagline": "Helper panel for texture alpha assignment and shadows",
-                 "version": $version,
+                 "version": ($version // "" | tostring),
                  "type": "add-on",
                  "maintainer": "XXJOHNATHANXX",
                  "license": ["SPDX:GPL-2.0-or-later"],
@@ -74,12 +74,6 @@ jobs:
                  "archive_hash": $hash
                }]' docs/index.json > tmp.json && mv tmp.json docs/index.json
           done
-
-      # Robust semantic version sort (handles numbers, nulls, leading "v")
-      - name: Sort index.json by semantic version (robust)
-        run: |
-          jq '.data |= map(.version = (.version // "" | tostring | ltrimstr("v"))) 
-              | .data |= sort_by((.version | split(".") | map(tonumber))) | reverse' docs/index.json > tmp.json && mv tmp.json docs/index.json
 
       - name: Build index.html
         run: |
@@ -98,10 +92,7 @@ jobs:
             <ul>
           EOF
 
-          # Loop through JSON in semantic version order
           jq -r '.data
-                 | sort_by((.version // "" | tostring | ltrimstr("v") | split(".") | map(tonumber))) 
-                 | reverse
                  | .[]
                  | "<li><b>\(.version)</b> - <a href=\"\(.archive_url)\">Download</a> (\(.archive_size) bytes)</li>"' docs/index.json \
             >> docs/index.html
