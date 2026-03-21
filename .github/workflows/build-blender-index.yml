@@ -1,8 +1,9 @@
 name: Build Blender Index
 
 on:
-  release:
-    types: [published]
+  push:
+    tags:
+      - '*'
   workflow_dispatch:
 
 permissions:
