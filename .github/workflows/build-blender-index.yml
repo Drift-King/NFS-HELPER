@@ -13,44 +13,51 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repo
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Prevent race condition (ZIP not ready yet)
-      - name: Wait for assets
-        run: sleep 30
+      # Prevent race condition (ZIP might not be ready yet)
+      - name: Wait for release assets
+        run: sleep 10
 
-      - name: Fetch releases
+      - name: Fetch releases from GitHub API
         run: |
           curl -s https://api.github.com/repos/${{ github.repository }}/releases > releases.json
 
-      - name: Generate index.json
+      - name: Build index.json
         run: |
           mkdir -p docs
 
+          # Base structure
           echo '{"version":"v1","blocklist":[],"data":[]}' > docs/index.json
 
+          # Loop through releases
           jq -c '.[]' releases.json | while read release; do
             TAG=$(echo "$release" | jq -r '.tag_name')
 
-            # Normalize version (remove leading v)
+            # Normalize version (remove leading "v")
             VERSION=$(echo "$TAG" | sed 's/^v//')
 
+            # Find ZIP asset
             ASSET=$(echo "$release" | jq -c '.assets[] | select(.name | endswith(".zip"))')
 
             if [ -z "$ASSET" ]; then
+              echo "No ZIP found for $TAG, skipping"
               continue
             fi
 
             URL=$(echo "$ASSET" | jq -r '.browser_download_url')
             SIZE=$(echo "$ASSET" | jq -r '.size')
 
-            echo "Processing $VERSION"
+            echo "Processing version $VERSION"
 
+            # Download ZIP
             curl -L "$URL" -o temp.zip
 
+            # Generate SHA256
             HASH=$(sha256sum temp.zip | awk '{print $1}')
 
+            # Append to JSON
             jq --arg version "$VERSION" \
                --arg url "$URL" \
                --arg hash "sha256:$HASH" \
@@ -73,3 +80,42 @@ jobs:
                }]' docs/index.json > tmp.json && mv tmp.json docs/index.json
 
           done
+
+      - name: Sort versions (newest first)
+        run: |
+          jq '.data |= sort_by(.version) | reverse' docs/index.json > tmp.json && mv tmp.json docs/index.json
+
+      - name: Build index.html
+        run: |
+          cat <<EOF > docs/index.html
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <title>NFS Texture Helper Downloads</title>
+            <style>
+              body { font-family: Arial; padding: 20px; }
+              li { margin: 10px 0; }
+            </style>
+          </head>
+          <body>
+            <h1>NFS Texture Helper</h1>
+            <ul>
+          EOF
+
+          jq -r '.data[] |
+            "<li><b>\(.version)</b> - <a href=\"\(.archive_url)\">Download</a> (\(.archive_size) bytes)</li>"' docs/index.json >> docs/index.html
+
+          cat <<EOF >> docs/index.html
+            </ul>
+          </body>
+          </html>
+          EOF
+
+      - name: Commit and push changes
+        run: |
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+
+          git add docs/index.json docs/index.html
+          git commit -m "Update index files" || echo "No changes to commit"
+          git push
