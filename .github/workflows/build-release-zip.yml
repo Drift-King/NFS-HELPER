@@ -1,42 +1,44 @@
-name: Build Zip & Upload Release
+name: Build Blender Add-on ZIP
 
 on:
-  push:
-    tags:
-      - '*'  # Trigger on any tag push
-
-permissions:
-  contents: write
+  release:
+    types: [published]  # triggers when a release is published
 
 jobs:
-  build-and-release:
+  build_zip:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
+      # 1. Checkout repository
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Create ZIP of nfs_helper folder
+      # 2. Set version from release tag
+      - name: Set version
         run: |
-          TAG=${GITHUB_REF_NAME#refs/tags/}  # Extract tag name
-          ZIP_NAME="NFS-HELPER-${TAG}.zip"
+          RELEASE_VERSION=${GITHUB_REF#refs/tags/}
+          echo "RELEASE_VERSION=$RELEASE_VERSION" >> $GITHUB_ENV
 
+      # 3. Create a ZIP with only nfs_helper/ contents
+      - name: Build Blender ZIP
+        run: |
           if [ ! -d "nfs_helper" ]; then
-            echo "Folder nfs_helper/ not found. Skipping ZIP creation."
-            exit 0
+            echo "Folder nfs_helper/ not found. Exiting."
+            exit 1
           fi
 
           mkdir -p release
-          zip -r "release/$ZIP_NAME" nfs_helper/
-          echo "Created release/$ZIP_NAME"
+          # Move into nfs_helper/ and zip its contents so ZIP is flat
+          cd nfs_helper
+          zip -r "../release/NFS-HELPER-${RELEASE_VERSION}.zip" ./*
+          cd ..
 
-      - name: Upload ZIP to GitHub Release
-        uses: ncipollo/release-action@v1
+          echo "Created release/NFS-HELPER-${RELEASE_VERSION}.zip"
+
+      # 4. Upload ZIP as release asset
+      - name: Upload release ZIP
+        uses: softprops/action-gh-release@v1
         with:
-          tag: ${{ github.ref_name }}
-          name: ${{ github.ref_name }}
-          draft: false
-          prerelease: false
-          artifacts: release/NFS-HELPER-${{ github.ref_name }}.zip
-          skipIfReleaseExists: false    # Update release if it exists
-          replaceArtifacts: true        # Replace old ZIP if present
+          files: "release/NFS-HELPER-${RELEASE_VERSION}.zip"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
