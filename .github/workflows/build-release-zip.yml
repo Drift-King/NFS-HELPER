@@ -33,6 +33,5 @@ jobs:
           name: ${{ github.event.release.tag_name }}
           draft: false
           prerelease: false
-          artifacts:
-            - "release/NFS-HELPER-${{ github.event.release.tag_name }}.zip"
+          artifact: "release/NFS-HELPER-${{ github.event.release.tag_name }}.zip"
           allowUpdates: true
