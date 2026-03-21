@@ -55,23 +55,23 @@ class NFSHelperPreferences(AddonPreferences):
     )
 
     def draw(self, context):
-		layout = self.layout
+        layout = self.layout
 
-		# Tab setting
-		layout.prop(self, "tab_name")
+        # Tab setting
+        layout.prop(self, "tab_name")
 
-		layout.separator()
+        layout.separator()
 
-		# Credits section
-		box = layout.box()
-		col = box.column(align=True)
+        # Credits section
+        box = layout.box()
+        col = box.column(align=True)
 
-		col.label(text="Credits")
-		col.separator()
-		col.label(text="Code based on: ArtistCDMJ")
-		col.label(text="Maintained by: XXJOHNATHANXX")
-		row = col.row()
-		row.operator("wm.url_open", text="ArtistCDMJ").url = "https://github.com/ArtistCDMJ/Opacity-helper"
+        col.label(text="Credits")
+        col.separator()
+        col.label(text="Code based on: ArtistCDMJ")
+        col.label(text="Maintained by: XXJOHNATHANXX")
+        row = col.row()
+        row.operator("wm.url_open", text="ArtistCDMJ").url = "https://github.com/ArtistCDMJ/Opacity-helper"
 
 def set_material_render_method(material, method):
     """Set the render method for the given material."""
@@ -572,7 +572,7 @@ class OBJECT_OT_update_alpha_threshold(bpy.types.Operator):
         return None
 
 classes = [
-	NFSHelperPreferences,
+    NFSHelperPreferences,
     OBJECT_OT_update_alpha_threshold,
     OBJECT_OT_group_alpha_connect,
     OBJECT_OT_group_texstraight,
