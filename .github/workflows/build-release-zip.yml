@@ -1,37 +1,43 @@
-name: Build Release Zip
+name: Build & Update NFS HELPER
 
 on:
-  release:
-    types: [published]    # Trigger when a release is published
-  workflow_dispatch:       # Allow manual trigger
+  push:
+    tags:
+      - '*'
+  workflow_dispatch:
 
 permissions:
   contents: write
 
 jobs:
-  build-and-release:
+  build-and-update:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.x"
+
       - name: Create ZIP of addon
         run: |
-          VERSION=${{ github.event.release.tag_name }}
-          ZIP_NAME="NFS-HELPER-${VERSION}.zip"
-
+          VERSION=${GITHUB_REF_NAME}
           mkdir -p release
-          zip -r "release/$ZIP_NAME" nfs_helper
+          ZIP_NAME="release/NFS-HELPER-${VERSION}.zip"
 
-          echo "Created release/$ZIP_NAME"
+          zip -r "$ZIP_NAME" nfs_helper/
 
-      - name: Upload or Update ZIP on release
+          echo "ZIP created:"
+          ls -lh release/
+
+      - name: Create GitHub Release
         uses: ncipollo/release-action@v1
         with:
-          tag: ${{ github.event.release.tag_name }}
-          name: ${{ github.event.release.tag_name }}
-          artifact: "release/NFS-HELPER-${{ github.event.release.tag_name }}.zip"
-          allowUpdates: true            # Updates existing release if tag exists
-          updateOnlyUnreleased: false   # Ensures existing releases are updated
-          makeLatest: true              # Marks this release as latest
+          tag: ${{ github.ref_name }}
+          name: ${{ github.ref_name }}
+          draft: false
+          prerelease: false
+          files: release/NFS-HELPER-${{ github.ref_name }}.zip
