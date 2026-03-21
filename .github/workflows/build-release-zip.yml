@@ -1,4 +1,4 @@
-name: Build & Update NFS HELPER
+name: Build Release Zip
 
 on:
   push:
