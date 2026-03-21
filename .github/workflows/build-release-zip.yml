@@ -1,9 +1,8 @@
 name: Build Zip & Upload Release
-
 on:
-  release:
-    types:
-      - created  # Only run when a new release is created
+  push:
+    tags:
+      - '*'  # Trigger on any tag push
 
 permissions:
   contents: write
