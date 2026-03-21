@@ -29,8 +29,10 @@ jobs:
       - name: Upload ZIP to release
         uses: ncipollo/release-action@v1
         with:
-          tag: ${{ github.event.release.tag_name }}       # Use the release tag, not main
-          name: ${{ github.event.release.tag_name }}      # Release name = tag
+          tag: ${{ github.event.release.tag_name }}
+          name: ${{ github.event.release.tag_name }}
           draft: false
           prerelease: false
-          artifacts: "release/NFS-HELPER-${{ github.event.release.tag_name }}.zip"
+          artifacts:
+            - "release/NFS-HELPER-${{ github.event.release.tag_name }}.zip"
+          allowUpdates: true
