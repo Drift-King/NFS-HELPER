@@ -3,7 +3,7 @@ name: Build Zip & Create Release
 on:
   push:
     tags:
-      - '*'
+      - '*'         # Trigger on any tag like 1.0.1
   workflow_dispatch:
 
 permissions:
@@ -30,8 +30,8 @@ jobs:
       - name: Create GitHub Release and upload ZIP
         uses: ncipollo/release-action@v1
         with:
-          tag: ${{ github.ref_name }}
-          name: ${{ github.ref_name }}
+          tag: ${{ github.ref_name }}       # GitHub release tag = pushed tag
+          name: ${{ github.ref_name }}      # Release name = tag
           draft: false
           prerelease: false
-          files: release/NFS-HELPER-${{ github.ref_name }}.zip
+          files: "release/NFS-HELPER-${{ github.ref_name }}.zip"  # ZIP filename includes tag
