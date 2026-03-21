@@ -1,7 +1,7 @@
 schema_version = "1.0.0"
 
 id = "nfs_helper"
-version = "1.0.1"
+version = "1.0.2"
 name = "NFS Texture Helper"
 tagline = "Helper panel for texture alpha assignment and shadows"
 maintainer = "XXJOHNATHANXX"
