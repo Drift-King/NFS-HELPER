@@ -1,4 +1,4 @@
-name: Build Index Files
+name: Build Blender Index
 
 on:
   release:
@@ -16,7 +16,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Prevent race condition (ZIP might not be ready yet)
+      # Wait a few seconds to ensure the release assets are available
       - name: Wait for release assets
         run: sleep 10
 
@@ -27,18 +27,15 @@ jobs:
       - name: Build index.json
         run: |
           mkdir -p docs
-
-          # Base structure
           echo '{"version":"v1","blocklist":[],"data":[]}' > docs/index.json
 
-          # Loop through releases
           jq -c '.[]' releases.json | while read release; do
             TAG=$(echo "$release" | jq -r '.tag_name')
 
             # Normalize version (remove leading "v")
             VERSION=$(echo "$TAG" | sed 's/^v//')
 
-            # Find ZIP asset
+            # Find the ZIP asset
             ASSET=$(echo "$release" | jq -c '.assets[] | select(.name | endswith(".zip"))')
 
             if [ -z "$ASSET" ]; then
@@ -51,13 +48,11 @@ jobs:
 
             echo "Processing version $VERSION"
 
-            # Download ZIP
+            # Download the ZIP to calculate SHA256
             curl -L "$URL" -o temp.zip
-
-            # Generate SHA256
             HASH=$(sha256sum temp.zip | awk '{print $1}')
 
-            # Append to JSON
+            # Append release info to index.json
             jq --arg version "$VERSION" \
                --arg url "$URL" \
                --arg hash "sha256:$HASH" \
@@ -81,9 +76,11 @@ jobs:
 
           done
 
-      - name: Sort versions (newest first)
+      # Semantic version sort (newest first, safely)
+      - name: Sort index.json by semantic version
         run: |
-          jq '.data |= sort_by((.version | split(".") | map(tonumber))) | reverse' docs/index.json > tmp.json && mv tmp.json docs/index.json
+          jq '.data |= map(.version = (.version | tostring | ltrimstr("v"))) 
+              | .data |= sort_by((.version | split(".") | map(tonumber))) | reverse' docs/index.json > tmp.json && mv tmp.json docs/index.json
 
       - name: Build index.html
         run: |
@@ -102,7 +99,7 @@ jobs:
             <ul>
           EOF
 
-          # Use jq to loop through the JSON in semantic version order
+          # Loop through JSON in semantic version order
           jq -r '.data
                  | sort_by((.version | split(".") | map(tonumber))) 
                  | reverse
@@ -115,12 +112,12 @@ jobs:
           </body>
           </html>
           EOF
-          
+
       - name: Commit and push changes
         run: |
           git config user.name "github-actions"
           git config user.email "actions@github.com"
 
           git add docs/index.json docs/index.html
-          git commit -m "Update index files" || echo "No changes to commit"
+          git commit -m "Update Blender index files" || echo "No changes to commit"
           git push
