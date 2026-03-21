@@ -2,29 +2,32 @@ name: Build Blender Add-on ZIP
 
 on:
   release:
-    types: [published]
-
-permissions:
-  contents: write
+    types: [published]  # triggers when a release is published
 
 jobs:
   build_zip:
     runs-on: ubuntu-latest
 
     steps:
+      # 1. Checkout repository
       - name: Checkout code
         uses: actions/checkout@v3
 
+      # 2. Set version from release tag
+      - name: Set version
+        run: echo "RELEASE_VERSION=${GITHUB_REF_NAME}" >> $GITHUB_ENV
+
+      # 3. Create a flat ZIP with only add-on files
       - name: Build Blender ZIP
         run: |
           mkdir -p release
-          zip -r release/NFS-HELPER-${GITHUB_REF_NAME}.zip nfs_helper
-      - name: Debug
-        run: ls -l release
+          zip -r release/NFS-HELPER-${RELEASE_VERSION}.zip * \
+            -x "*.github*" "docs/*" "*.gitignore" "LICENSE"
 
+      # 4. Upload ZIP as release asset
       - name: Upload release ZIP
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v1
         with:
-          files: release/NFS-HELPER-${{ github.ref_name }}.zip
+          files: release/NFS-HELPER-${RELEASE_VERSION}.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
