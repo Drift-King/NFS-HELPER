@@ -1,4 +1,4 @@
-name: Build Release Zip
+ame: Build Zip & Create Release
 
 on:
   push:
@@ -10,34 +10,28 @@ permissions:
   contents: write
 
 jobs:
-  build-and-update:
+  build-and-release:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: "3.x"
-
       - name: Create ZIP of addon
         run: |
           VERSION=${GITHUB_REF_NAME}
+          ZIP_NAME="NFS-HELPER-${VERSION}.zip"
+
           mkdir -p release
-          ZIP_NAME="release/NFS-HELPER-${VERSION}.zip"
+          zip -r "release/$ZIP_NAME" nfs_helper/
 
-          zip -r "$ZIP_NAME" nfs_helper/
+          echo "Created release/$ZIP_NAME"
 
-          echo "ZIP created:"
-          ls -lh release/
-
-      - name: Create GitHub Release
+      - name: Create GitHub Release and upload ZIP
         uses: ncipollo/release-action@v1
         with:
           tag: ${{ github.ref_name }}
           name: ${{ github.ref_name }}
           draft: false
           prerelease: false
-          files: release/NFS-HELPER-${{ github.ref_name }}.zip
+          artifacts: release/NFS-HELPER-${{ github.ref_name }}.zip
