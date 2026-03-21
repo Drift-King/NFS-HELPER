@@ -28,17 +28,24 @@ jobs:
           fi
 
           mkdir -p release
-          # Move into nfs_helper/ and zip its contents so ZIP is flat
           cd nfs_helper
           zip -r "../release/NFS-HELPER-${RELEASE_VERSION}.zip" ./*
           cd ..
 
           echo "Created release/NFS-HELPER-${RELEASE_VERSION}.zip"
 
-      # 4. Upload ZIP as release asset
+      # 4. Upload ZIP as release asset (update if release exists)
       - name: Upload release ZIP
-        uses: softprops/action-gh-release@v1
+        uses: ncipollo/release-action@v1
         with:
-          files: "release/NFS-HELPER-${RELEASE_VERSION}.zip"
+          tag: ${{ github.ref_name }}
+          name: ${{ github.ref_name }}
+          draft: false
+          prerelease: false
+          artifacts: release/NFS-HELPER-${{ github.ref_name }}.zip
+          skipIfReleaseExists: false       # ensures release is updated
+          replacesArtifacts: true          # replaces old ZIP if it exists
+          immutableCreate: false           # allows modifying existing release
+          generateReleaseNotes: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
