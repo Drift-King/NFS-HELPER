@@ -75,10 +75,10 @@ jobs:
                }]' docs/index.json > tmp.json && mv tmp.json docs/index.json
           done
 
-      # Semantic version sort (single safe step)
-      - name: Sort index.json by semantic version
+      # Robust semantic version sort (handles numbers, nulls, leading "v")
+      - name: Sort index.json by semantic version (robust)
         run: |
-          jq '.data |= map(.version = (.version | tostring | ltrimstr("v"))) 
+          jq '.data |= map(.version = (.version // "" | tostring | ltrimstr("v"))) 
               | .data |= sort_by((.version | split(".") | map(tonumber))) | reverse' docs/index.json > tmp.json && mv tmp.json docs/index.json
 
       - name: Build index.html
@@ -98,8 +98,9 @@ jobs:
             <ul>
           EOF
 
+          # Loop through JSON in semantic version order
           jq -r '.data
-                 | sort_by((.version | split(".") | map(tonumber))) 
+                 | sort_by((.version // "" | tostring | ltrimstr("v") | split(".") | map(tonumber))) 
                  | reverse
                  | .[]
                  | "<li><b>\(.version)</b> - <a href=\"\(.archive_url)\">Download</a> (\(.archive_size) bytes)</li>"' docs/index.json \
