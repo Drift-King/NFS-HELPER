@@ -1,9 +1,9 @@
 name: Build Blender Index
 
 on:
-  push:
-    tags:
-      - '*'
+  #push:
+  #  tags:
+  #    - '*'
   workflow_dispatch:
 
 permissions:
@@ -18,8 +18,8 @@ jobs:
         uses: actions/checkout@v4
 
       # Wait to ensure release assets are available
-      - name: Wait for release assets
-        run: sleep 15
+      #- name: Wait for release assets
+      #  run: sleep 15
 
       - name: Fetch releases from GitHub API
         run: |
