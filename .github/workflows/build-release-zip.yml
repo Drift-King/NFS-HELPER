@@ -2,8 +2,8 @@ name: Build Release Zip
 
 on:
   release:
-    types: [published]   # Trigger when release is published
-  workflow_dispatch:
+    types: [published]    # Trigger when a release is published
+  workflow_dispatch:       # Allow manual trigger
 
 permissions:
   contents: write
@@ -11,6 +11,7 @@ permissions:
 jobs:
   build-and-release:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -25,10 +26,12 @@ jobs:
 
           echo "Created release/$ZIP_NAME"
 
-      - name: Upload ZIP to existing release
+      - name: Upload or Update ZIP on release
         uses: ncipollo/release-action@v1
         with:
           tag: ${{ github.event.release.tag_name }}
+          name: ${{ github.event.release.tag_name }}
           artifact: "release/NFS-HELPER-${{ github.event.release.tag_name }}.zip"
-          allowUpdates: true      # update existing release
-          updateOnlyUnreleased: false  # ensures existing release gets updated
+          allowUpdates: true            # Updates existing release if tag exists
+          updateOnlyUnreleased: false   # Ensures existing releases are updated
+          makeLatest: true              # Marks this release as latest
